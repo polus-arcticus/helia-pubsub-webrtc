@@ -1,6 +1,0 @@
-[submodule "fevm-hardhat-kit"]
-	path = fevm-hardhat-kit
-	url = git@github.com:filecoin-project/fevm-hardhat-kit.git
-[submodule "filecoin-fvm-localnet"]
-	path = filecoin-fvm-localnet
-	url = git@github.com:hammertoe/filecoin-fvm-localnet.git
