@@ -16,7 +16,8 @@ let index = 0
 export default class PubSubRoom extends EventEmitter {
   constructor (libp2p, topic, options) {
     super()
-    this._libp2p = libp2p.libp2p || libp2p
+    console.log('libp2p', libp2p)
+    this._libp2p = libp2p
     this._topic = topic
     this._options = Object.assign({}, clone(DEFAULT_OPTIONS), clone(options))
     this._peers = []
@@ -25,7 +26,7 @@ export default class PubSubRoom extends EventEmitter {
     this._handleDirectMessage = this._handleDirectMessage.bind(this)
     this._handleMessage = this._onMessage.bind(this)
 
-    if (!this._libp2p.pubsub) {
+    if (!this._libp2p.services.pubsub) {
       throw new Error('pubsub has not been configured')
     }
 
@@ -36,9 +37,9 @@ export default class PubSubRoom extends EventEmitter {
 
     directConnection.handle(this._libp2p)
     directConnection.emitter.on(this._topic, this._handleDirectMessage)
-
-    this._libp2p.pubsub.subscribe(this._topic)
-    this._libp2p.pubsub.addEventListener('message', this._handleMessage)
+    console.log('subscribing?: to', this._topic)
+    this._libp2p.services.pubsub.subscribe(this._topic)
+    this._libp2p.services.pubsub.addEventListener('message', this._handleMessage)
 
     this._idx = index++
   }
@@ -58,15 +59,15 @@ export default class PubSubRoom extends EventEmitter {
     })
     directConnection.emitter.removeListener(this._topic, this._handleDirectMessage)
     // directConnection.unhandle(this._libp2p)
-    await this._libp2p.pubsub.unsubscribe(this._topic)
-    this._libp2p.pubsub.removeEventListener('message', this._handleMessage)
+    await this._libp2p.services.pubsub.unsubscribe(this._topic)
+    this._libp2p.services.pubsub.removeEventListener('message', this._handleMessage)
   }
 
   async broadcast (_message) {
     console.log('broadcasting', _message)
     const message = encoding(_message)
     console.log('broadcasting::encoding', message)
-    await this._libp2p.pubsub.publish(this._topic, message)
+    await this._libp2p.services.pubsub.publish(this._topic, message)
   }
 
   sendTo (peer, message) {
@@ -102,7 +103,7 @@ export default class PubSubRoom extends EventEmitter {
   }
 
   async _pollPeers () {
-    const newPeers = (await this._libp2p.pubsub.getSubscribers(this._topic)).sort()
+    const newPeers = (await this._libp2p.services.pubsub.getSubscribers(this._topic)).sort()
 
     if (this._emitChanges(newPeers)) {
       this._peers = newPeers

@@ -3,7 +3,7 @@ import { unixfs } from '@helia/unixfs'
 import { createHelia } from 'helia'
 import { createLibp2p } from 'libp2p'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { webtransport } from '@libp2p/webtransport'
+import { webTransport } from '@libp2p/webtransport'
 import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { noise } from '@chainsafe/libp2p-noise'
@@ -12,6 +12,11 @@ import { webSockets } from '@libp2p/websockets'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import PropTypes from 'prop-types'
 import { sha256 } from 'multiformats/hashes/sha2'
+import { bootstrap } from '@libp2p/bootstrap'
+import { kadDHT } from '@libp2p/kad-dht'
+import { identifyService } from 'libp2p/identify'
+import { circuitRelayTransport } from 'libp2p/circuit-relay'
+
 
 import { CHAT_TOPIC, CIRCUIT_RELAY_CODE, WEBRTC_BOOTSTRAP_NODE, WEBTRANSPORT_BOOTSTRAP_NODE } from './constants'
 
@@ -25,6 +30,7 @@ import {
 
 export const HeliaContext = createContext({
   helia: null,
+  libp2p: null,
   fs: null,
   error: false,
   starting: true
@@ -32,10 +38,10 @@ export const HeliaContext = createContext({
 
 export const HeliaProvider = ({ children }) => {
   const [helia, setHelia] = useState(null)
+  const [libp2p, setLibp2p] = useState(null)
   const [fs, setFs] = useState(null)
   const [starting, setStarting] = useState(true)
   const [error, setError] = useState(null)
-
   const startHelia = useCallback(async () => {
     if (helia) {
       console.info('helia already started')
@@ -47,11 +53,12 @@ export const HeliaProvider = ({ children }) => {
     } else {
       try {
         const libp2p = await createLibp2p({
+          start: true,
           addresses: {
             listen: ['/webrtc']
           },
           transports: [
-            webtransport(),
+            webTransport(),
             webSockets({
               filter: filters.all
             }),
@@ -75,6 +82,9 @@ export const HeliaProvider = ({ children }) => {
             minConnections: 5
           },
           streamMuxers: [yamux(), mplex()],
+          connectionGater: {
+            denyDialMultiaddr: async () => false,
+          },
           connectionEncryption: [noise()],
           peerDiscovery: [
             bootstrap({
@@ -90,9 +100,17 @@ export const HeliaProvider = ({ children }) => {
               msgIdFn: msgIdFnStrictNoSign,
               ignoreDuplicatePublishError: true
             })
-          }
+          },
+          dht: kadDHT({
+            protocolPrefix: "/open-outcry",
+            maxInboundStreams: 5000,
+            maxOutboundStreams: 5000,
+            clientMode: true,
+          }),
+          identify: identifyService()
         })
         libp2p.addEventListener('self:peer:update', ({ detail: { peer } }) => {
+          console.log("peer", peer)
           const multiaddrs = peer.addresses.map(({ multiaddr }) => multiaddr)
 
           console.log(`changed multiaddrs: peer ${peer.id.toString()} multiaddrs: ${multiaddrs}`)
@@ -102,6 +120,7 @@ export const HeliaProvider = ({ children }) => {
         const helia = await createHelia({
           libp2p
         })
+        setLibp2p(libp2p)
         setHelia(helia)
         setFs(unixfs(helia))
         setStarting(false)
@@ -120,6 +139,7 @@ export const HeliaProvider = ({ children }) => {
     <HeliaContext.Provider
       value={{
         helia,
+        libp2p,
         fs,
         error,
         starting
@@ -131,12 +151,12 @@ export const HeliaProvider = ({ children }) => {
 // message IDs are used to dedupe inbound messages
 // every agent in network should use the same message id function
 // messages could be perceived as duplicate if this isnt added (as opposed to rust peer which has unique message ids)
-export async function msgIdFnStrictNoSign(msg): {
+export async function msgIdFnStrictNoSign(msg) {
   let enc = new TextEncoder();
 
-const signedMessage = msg
-const encodedSeqNum = enc.encode(signedMessage.sequenceNumber.toString());
-return await sha256.encode(encodedSeqNum)
+  const signedMessage = msg
+  const encodedSeqNum = enc.encode(signedMessage.sequenceNumber.toString());
+  return await sha256.encode(encodedSeqNum)
 }
 HeliaProvider.propTypes = {
   children: PropTypes.any
