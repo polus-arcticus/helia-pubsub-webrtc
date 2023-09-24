@@ -18,7 +18,6 @@ import { kadDHT } from '@libp2p/kad-dht'
 import { identifyService } from 'libp2p/identify'
 import { circuitRelayTransport } from 'libp2p/circuit-relay'
 import {mdns} from '@libp2p/mdns'
-
 import { CHAT_TOPIC, CIRCUIT_RELAY_CODE, WEBRTC_BOOTSTRAP_NODE, WEBTRANSPORT_BOOTSTRAP_NODE } from './constants'
 
 import { Circuit, IP, DNS } from '@multiformats/multiaddr-matcher'
@@ -136,13 +135,13 @@ export const HeliaProvider = ({ children }) => {
               ignoreDuplicatePublishError: true
             }),
             identify: identifyService()
-          },
+          },/*
           dht: kadDHT({
             protocolPrefix: "/open-outcry",
             maxInboundStreams: 5000,
             maxOutboundStreams: 5000,
             clientMode: true,
-          }),
+          }),*/
         })
         console.info('Starting Helia')
 

@@ -22,7 +22,9 @@ services:
       - nginx-html:/usr/share/nginx/html
 
   bootstrap:
-    image: ipfs/kubo:latest
+    build:
+      context: ./bootstrap
+      dockerfile: Dockerfile
     restart: unless-stopped
     volumes:
       - ipfs_path:/data/ipfs

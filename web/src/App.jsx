@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { usePubsubRoom } from './hooks/useAuctionRoom'
+import { usePubsubRoom } from './hooks/usePubsubRoom'
 import {useHelia } from './hooks/useHelia'
 
 function App() {
