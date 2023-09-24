@@ -1,4 +1,26 @@
 services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - 443:443
+      - 80:80
+    container_name: nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx-certs:/etc/nginx/certs
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
+
+  nginx-proxy-letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    environment:
+      NGINX_PROXY_CONTAINER: "nginx-proxy"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx-certs:/etc/nginx/certs
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
+
   bootstrap:
     image: ipfs/kubo:latest
     restart: unless-stopped
@@ -35,11 +57,15 @@ services:
     volumes:
       - ./web/:/app:rw
       - /app/node_modules
+      - nginx-certs:/app/certs
     ports:
       - "5173:5173"
     environment:
       - PORT=5173
       - VITE_DOMAIN=${DOMAIN}
+    depends_on:
+      - nginx-proxy
+      - nginx-proxy-letsencrypt
 
   web-user-2:
     #depends_on:
@@ -54,14 +80,22 @@ services:
     volumes:
       - ./web/:/app:rw
       - /app/node_modules
+      - nginx-certs:/app/certs
     ports:
       - "5174:5174"
     environment:
       - PORT=5174
       - VITE_DOMAIN=${DOMAIN}
+    depends_on:
+      - nginx-proxy
+      - nginx-proxy-letsencrypt
 
 
 volumes:
   ipfs_path:
   ipfs_fuse:
   ipns_fuse:
+  nginx-certs:
+  nginx-vhost:
+  nginx-html:
+  ignore:

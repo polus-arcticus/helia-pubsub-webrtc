@@ -2,17 +2,44 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { useAuctionRoom } from './hooks/useAuctionRoom'
+import { usePubsubRoom } from './hooks/useAuctionRoom'
 import {useHelia } from './hooks/useHelia'
+
 function App() {
-  const { libp2p} =  useHelia()
+  const { helia, starting, multipleAddresses} =  useHelia()
   const [count, setCount] = useState(0)
-  const {room, peerCount, peers} = useAuctionRoom()
+  const {
+    room,
+    peerCount,
+    peers,
+    peerToConnect, 
+    setPeerToConnect,
+    addPeer
+  } = usePubsubRoom()
   return (
     <div>
-      {libp2p && (<p>Libp2p Peer id: {libp2p.peerId.toString()}</p>)}
+      <p>helia is: {starting ? "loading": "ready"}</p>
+      {helia && (<p>Libp2p Peer id: {helia.libp2p.peerId.toString()}</p>)}
+      {helia && (<p>Libp2p Multiaddrs: { multipleAddresses }</p>)}
       <p>Auction Room</p>
+      <input
+       type="text"
+       name="peerToConnect"
+       value={peerToConnect}
+       onChange={(evt)=> {setPeerToConnect(evt.target.value)}}
+      />
       <p>peerCount: {peerCount}</p>
+      <button onClick={async () => {
+        addPeer()
+        /*
+        console.log('subscribers', libp2p.services.pubsub.getSubscribers('open-outcry').toString()) 
+        const res = await libp2p.services.pubsub.publish(
+          'open-outcry',
+          new TextEncoder().encode('hello'),
+        )
+        console.log(res)
+        */
+      }}>Click me</button>
     </div>
   )
 }

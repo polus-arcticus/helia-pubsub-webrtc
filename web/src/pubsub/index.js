@@ -14,10 +14,9 @@ const DEFAULT_OPTIONS = {
 let index = 0
 
 export default class PubSubRoom extends EventEmitter {
-  constructor (libp2p, topic, options) {
+  constructor (helia, topic, options) {
     super()
-    console.log('libp2p', libp2p)
-    this._libp2p = libp2p
+    this._libp2p = helia.libp2p
     this._topic = topic
     this._options = Object.assign({}, clone(DEFAULT_OPTIONS), clone(options))
     this._peers = []
