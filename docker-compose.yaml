@@ -47,9 +47,6 @@ services:
       - 127.0.0.1:8080:8080
   
   web-user:
-    #depends_on:
-      #- ganache-cli
-      #- hardhat-deploy
     build:
       context: ./web
       dockerfile: ./Dockerfile
@@ -70,9 +67,6 @@ services:
       - nginx-proxy-letsencrypt
 
   web-user-2:
-    #depends_on:
-      #- ganache-cli
-      #- hardhat-deploy
     build:
       context: ./web
       dockerfile: ./Dockerfile
